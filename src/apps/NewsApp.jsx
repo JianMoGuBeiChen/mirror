@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { getAppSettings } from '../data/apps';
+import { useTheme } from '../context/ThemeContext';
 
 const NewsApp = ({ appId = 'news' }) => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [settings, setSettings] = useState(getAppSettings(appId));
+  const { theme } = useTheme();
 
   useEffect(() => {
     setSettings(getAppSettings(appId));
+  }, [appId]);
+
+  // Live update when settings change elsewhere
+  useEffect(() => {
+    const handleStorage = () => setSettings(getAppSettings(appId));
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, [appId]);
 
   useEffect(() => {
@@ -106,22 +115,25 @@ const NewsApp = ({ appId = 'news' }) => {
   return (
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex items-center mb-3">
-        <div className="text-white font-semibold text-lg">📰 News</div>
+        <div className="font-semibold text-lg" style={{ color: 'white' }}>
+          <span role="img" aria-label="news" className="mr-1" style={{ color: theme.accent }}>📰</span>
+          News
+        </div>
         {loading && (
-          <div className="ml-2 text-white/50 text-xs">Updating...</div>
+          <div className="ml-2 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Updating...</div>
         )}
       </div>
       
       <div className="flex-1 overflow-auto space-y-3">
         {news.map((article) => (
-          <div key={article.id} className="border-b border-white/10 pb-2 last:border-b-0">
-            <div className="text-white text-sm font-medium leading-tight mb-1">
+          <div key={article.id} className="pb-2 last:border-b-0 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+            <div className="text-sm font-medium leading-tight mb-1" style={{ color: 'white' }}>
               {article.title}
             </div>
-            <div className="text-white/70 text-xs leading-relaxed mb-1">
+            <div className="text-xs leading-relaxed mb-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
               {article.summary}
             </div>
-            <div className="text-white/50 text-xs">
+            <div className="text-xs" style={{ color: theme.accent }}>
               {formatTimeAgo(article.publishedAt)}
             </div>
           </div>

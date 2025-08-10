@@ -4,12 +4,14 @@ import DraggableApp from '../components/DraggableApp';
 import CursorOverlay from '../components/CursorOverlay';
 import HandTrackingService from '../components/HandTrackingService';
 import { apps, getAppSettings } from '../data/apps';
+import { getGeneralSettings } from '../data/general';
 
 // Import all app components
 import ClockApp from '../apps/ClockApp';
 import DateApp from '../apps/DateApp';
 import WeatherApp from '../apps/WeatherApp';
 import NewsApp from '../apps/NewsApp';
+import SpotifyApp from '../apps/SpotifyApp';
 
 const SmartMirror = () => {
   const [enabledApps, setEnabledApps] = useState([]);
@@ -20,6 +22,8 @@ const SmartMirror = () => {
   const [dragTarget, setDragTarget] = useState(null);
   const dragTargetRef = useRef(null); // Immediate reference for drag logic
   const [appPositions, setAppPositions] = useState({}); // Track positions for each app
+  const [focusedAppId, setFocusedAppId] = useState(null);
+  const [mirrorEnabled, setMirrorEnabled] = useState(getGeneralSettings().mirrorEnabled);
 
   const clearDragState = () => {
     // Clear all app highlights first
@@ -65,8 +69,11 @@ const SmartMirror = () => {
     };
     
     window.addEventListener('storage', handleStorageChange);
+    const handleGeneral = () => setMirrorEnabled(getGeneralSettings().mirrorEnabled);
+    window.addEventListener('storage', handleGeneral);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', handleGeneral);
       // Clean up any drag state on unmount
       clearDragState();
     };
@@ -80,6 +87,23 @@ const SmartMirror = () => {
       clearDragState();
     }
     
+    // Update hover focus for hand cursor
+    if (position.detected) {
+      const allApps = document.querySelectorAll('[data-app-id]');
+      let hoverAppId = null;
+      allApps.forEach(app => {
+        const rect = app.getBoundingClientRect();
+        const isUnderCursor = position.x >= rect.left && 
+                              position.x <= rect.right && 
+                              position.y >= rect.top && 
+                              position.y <= rect.bottom;
+        if (isUnderCursor) hoverAppId = app.dataset.appId;
+      });
+      setFocusedAppId(hoverAppId);
+    } else {
+      setFocusedAppId(null);
+    }
+
     // Handle pinch-to-drag functionality
     if (position.detected && position.isPinching) {
       if (!dragTargetRef.current) {
@@ -182,6 +206,8 @@ const SmartMirror = () => {
         }
       };
       localStorage.setItem(`smartMirror_${dragTarget.appId}_layout`, JSON.stringify(layout));
+      // Notify listeners in this tab
+      try { window.dispatchEvent(new Event('storage')); } catch (_) {}
       
       // Clean up and reset state
       clearDragState();
@@ -193,7 +219,8 @@ const SmartMirror = () => {
     ClockApp,
     DateApp,
     WeatherApp,
-    NewsApp
+    NewsApp,
+    SpotifyApp
   };
 
   const renderApp = (app) => {
@@ -215,6 +242,7 @@ const SmartMirror = () => {
         initialSize={app.defaultSize}
         externalPosition={externalPosition}
         isExternallyDragged={isBeingDragged}
+        isFocused={focusedAppId === app.id}
       >
         <AppComponent appId={app.id} />
       </DraggableApp>
@@ -222,7 +250,7 @@ const SmartMirror = () => {
   };
 
   return (
-    <div ref={containerRef} className="w-screen h-screen bg-black overflow-hidden relative">
+    <div ref={containerRef} className={`w-screen h-screen bg-black overflow-hidden relative`}>
       {/* Settings Button */}
       <Link 
         to="/settings"
@@ -243,8 +271,8 @@ const SmartMirror = () => {
       
 
 
-      {/* Render enabled apps */}
-      {enabledApps.map(renderApp)}
+      {/* Render enabled apps or black screen when mirror disabled */}
+      {mirrorEnabled ? enabledApps.map(renderApp) : null}
 
       {/* Hand tracking cursor overlay */}
       <CursorOverlay 

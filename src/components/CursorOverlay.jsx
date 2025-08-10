@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const CursorOverlay = ({ position, isVisible, isDragging = false }) => {
+  const { theme } = useTheme();
   if (!isVisible || !position || !position.detected) {
     return null;
   }
@@ -24,9 +26,19 @@ const CursorOverlay = ({ position, isVisible, isDragging = false }) => {
   
   // Border and color intensity
   const borderWidth = isPinching ? 3 + (2 * pinchStrength) : 4;
+  const accent = theme.accent;
+  const hexToRgb = (hex) => {
+    const s = hex.replace('#','');
+    const bigint = parseInt(s, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `${r}, ${g}, ${b}`;
+  };
+  const accentRgb = hexToRgb(accent);
   const borderColor = isPinching ? 
-    `rgba(59, 130, 246, ${0.8 + (0.2 * pinchStrength)})` : 
-    'rgba(59, 130, 246, 0.8)';
+    `rgba(${accentRgb}, ${0.8 + (0.2 * pinchStrength)})` : 
+    `rgba(${accentRgb}, 0.8)`;
 
   return (
     <div
@@ -47,10 +59,10 @@ const CursorOverlay = ({ position, isVisible, isDragging = false }) => {
             width: `${currentSize}px`,
             height: `${currentSize}px`,
             border: `${borderWidth}px solid ${borderColor}`,
-            backgroundColor: `rgba(59, 130, 246, ${fillOpacity})`,
+            backgroundColor: `rgba(${accentRgb}, ${fillOpacity})`,
             boxShadow: `
-              0 0 ${glowIntensity}px rgba(59, 130, 246, ${0.8 + (0.2 * pinchStrength)}), 
-              0 0 ${glowIntensity * 2}px rgba(59, 130, 246, ${0.4 + (0.3 * pinchStrength)})
+              0 0 ${glowIntensity}px rgba(${accentRgb}, ${0.8 + (0.2 * pinchStrength)}), 
+              0 0 ${glowIntensity * 2}px rgba(${accentRgb}, ${0.4 + (0.3 * pinchStrength)})
             `,
             animation: isPinching ? 'pinch-pulse 0.5s infinite' : 'idle-pulse 2s infinite',
             transform: `scale(${1 - (0.1 * pinchStrength)})`,
@@ -64,9 +76,9 @@ const CursorOverlay = ({ position, isVisible, isDragging = false }) => {
             width: `${4 + (2 * pinchStrength)}px`,
             height: `${4 + (2 * pinchStrength)}px`,
             backgroundColor: isPinching ? 
-              `rgba(147, 197, 253, ${1})` : 
-              'rgba(147, 197, 253, 0.8)',
-            boxShadow: `0 0 ${10 + (5 * pinchStrength)}px rgba(147, 197, 253, 1)`,
+              `rgba(${accentRgb}, ${1})` : 
+              `rgba(${accentRgb}, 0.8)`,
+            boxShadow: `0 0 ${10 + (5 * pinchStrength)}px rgba(${accentRgb}, 1)`,
           }}
         />
         

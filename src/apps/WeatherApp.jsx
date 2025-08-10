@@ -1,14 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { getAppSettings } from '../data/apps';
+import { useTheme } from '../context/ThemeContext';
+import { useElementSize } from '../hooks/useElementSize';
 
 const WeatherApp = ({ appId = 'weather' }) => {
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [settings, setSettings] = useState(getAppSettings(appId));
+  const { theme } = useTheme();
+  const { ref, width, height } = useElementSize();
+
+  // Compute responsive sizes early to obey hooks rules regardless of early returns
+  const sizes = useMemo(() => {
+    const minDim = Math.max(1, Math.min(width, height));
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(v)));
+    const iconSize = clamp(minDim * 0.5, 32, 160);
+    const tempSize = clamp(minDim * 0.36, 24, 128);
+    const locationSize = clamp(minDim * 0.14, 12, 28);
+    const detailsSize = clamp(minDim * 0.12, 10, 22);
+    return { iconSize, tempSize, locationSize, detailsSize };
+  }, [width, height]);
 
   useEffect(() => {
     setSettings(getAppSettings(appId));
+  }, [appId]);
+
+  // Live update when settings change elsewhere
+  useEffect(() => {
+    const handleStorage = () => setSettings(getAppSettings(appId));
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, [appId]);
 
   useEffect(() => {
@@ -132,20 +154,22 @@ const WeatherApp = ({ appId = 'weather' }) => {
 
   const tempUnit = settings.units === 'celsius' ? '°C' : '°F';
 
+  
+
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      <div className="text-center">
-        <div className="text-4xl mb-2">
+    <div ref={ref} className="w-full h-full flex">
+      <div className="m-auto text-center">
+        <div className="leading-none" style={{ color: theme.accent, fontSize: `${sizes.iconSize}px` }}>
           {getWeatherIcon(weatherData.weathercode)}
         </div>
-        <div className="text-white text-2xl font-bold">
+        <div className="font-bold leading-none" style={{ color: 'white', fontSize: `${sizes.tempSize}px` }}>
           {Math.round(weatherData.temperature)}{tempUnit}
         </div>
-        <div className="text-white/70 text-sm mt-1">
+        <div className="mt-1" style={{ color: 'rgba(255,255,255,0.75)', fontSize: `${sizes.locationSize}px` }}>
           {weatherData.location}
         </div>
         {settings.showDetails && (
-          <div className="text-white/50 text-xs mt-1">
+          <div className="mt-1" style={{ color: 'rgba(255,255,255,0.65)', fontSize: `${sizes.detailsSize}px` }}>
             {getWeatherDescription(weatherData.weathercode)}
           </div>
         )}

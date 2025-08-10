@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Hands } from '@mediapipe/hands';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
@@ -12,6 +12,8 @@ const HAND_CONNECTIONS = [
   [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
   [5, 9], [9, 13], [13, 17]             // Palm connections
 ];
+
+const PREVIEW_APP_ID = 'handtracking_preview';
 
 const HandTrackingService = ({ onHandPosition, settings = {}, enabled }) => {
   const videoRef = useRef(null);
@@ -28,6 +30,30 @@ const HandTrackingService = ({ onHandPosition, settings = {}, enabled }) => {
     setIsEnabled(enabled ?? settings.enabled ?? false);
     setShowPreview(settings.showPreview || false);
   }, [enabled, settings]);
+
+  // Load saved preview position (from hand or mouse drags)
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`smartMirror_${PREVIEW_APP_ID}_layout`) || 'null');
+      if (saved?.position) {
+        setPreviewPosition(saved.position);
+      }
+    } catch (_) {}
+  }, []);
+
+  // React to storage updates (e.g., pinch-drag end in SmartMirror)
+  useEffect(() => {
+    const handleStorage = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(`smartMirror_${PREVIEW_APP_ID}_layout`) || 'null');
+        if (saved?.position) {
+          setPreviewPosition(saved.position);
+        }
+      } catch (_) {}
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   useEffect(() => {
     if (!isEnabled) {
@@ -216,7 +242,7 @@ const HandTrackingService = ({ onHandPosition, settings = {}, enabled }) => {
     });
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (isDraggingPreview) {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
@@ -230,24 +256,29 @@ const HandTrackingService = ({ onHandPosition, settings = {}, enabled }) => {
         y: Math.max(0, Math.min(newY, maxY))
       });
     }
-  };
+  }, [isDraggingPreview, dragStart]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDraggingPreview(false);
-  };
+    // Persist new position so other logic (and sessions) can pick it up
+    try {
+      const size = { width: 256, height: 192 }; // matches w-64 h-48
+      const layout = { position: { ...previewPosition }, size };
+      localStorage.setItem(`smartMirror_${PREVIEW_APP_ID}_layout`, JSON.stringify(layout));
+      window.dispatchEvent(new Event('storage'));
+    } catch (_) {}
+  }, [previewPosition]);
 
   // Add global mouse event listeners
   useEffect(() => {
-    if (isDraggingPreview) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDraggingPreview, dragStart]);
+    if (!isDraggingPreview) return;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingPreview, handleMouseMove, handleMouseUp]);
 
   if (!isEnabled) {
     return null;
@@ -255,11 +286,12 @@ const HandTrackingService = ({ onHandPosition, settings = {}, enabled }) => {
 
   return (
     <div 
-      className={`fixed z-40 ${showPreview ? 'block' : 'hidden'}`}
+      className={`absolute z-40 ${showPreview ? 'block' : 'hidden'}`}
       style={{
         left: `${previewPosition.x}px`,
         top: `${previewPosition.y}px`
       }}
+      data-app-id={PREVIEW_APP_ID}
     >
       <div 
         className="bg-black/80 backdrop-blur-sm rounded-lg p-2 cursor-move select-none"

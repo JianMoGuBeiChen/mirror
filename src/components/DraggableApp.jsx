@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+import { useTheme } from '../context/ThemeContext';
+import { getGeneralSettings } from '../data/general';
+
 const DraggableApp = ({ 
   children, 
   initialPosition = { x: 0, y: 0 }, 
@@ -8,8 +11,22 @@ const DraggableApp = ({
   onPositionChange,
   onSizeChange,
   externalPosition = null, // New prop for external position updates
-  isExternallyDragged = false // Flag to indicate external dragging
+  isExternallyDragged = false, // Flag to indicate external dragging
+  isFocused = false // Hand-cursor hover focus
 }) => {
+  const { theme } = useTheme();
+
+  const accent = theme.accent;
+  const hexToRgb = (hex) => {
+    const s = hex.replace('#','');
+    const bigint = parseInt(s, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `${r}, ${g}, ${b}`;
+  };
+  const accentRgb = hexToRgb(accent);
+  const general = getGeneralSettings();
   const [position, setPosition] = useState(initialPosition);
   const [size, setSize] = useState(initialSize);
   const [isDragging, setIsDragging] = useState(false);
@@ -123,7 +140,7 @@ const DraggableApp = ({
   return (
     <div
       ref={appRef}
-      className="draggable-app absolute"
+      className="draggable-app absolute group"
       data-app-id={appId}
       style={{
         left: (externalPosition ? externalPosition.x : position.x),
@@ -137,8 +154,41 @@ const DraggableApp = ({
       onMouseDown={handleMouseDown}
     >
       <div 
-        className="w-full h-full bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg overflow-hidden"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        className="w-full h-full rounded-lg overflow-hidden"
+        style={{ 
+          cursor: isDragging ? 'grabbing' : 'grab',
+          background: (() => {
+            switch (general.backgroundStyle) {
+              case 'frosted': return 'rgba(255,255,255,0.06)'; // Cloudy Glass
+              case 'liquid': return 'rgba(255,255,255,0.1)';   // Liquid Glow
+              case 'arctic': return 'rgba(173,216,230,0.08)';  // Arctic Haze (light blue)
+              case 'ember':  return 'rgba(255,69,0,0.06)';     // Ember Mist (warm)
+              case 'smoke':  return 'rgba(255,255,255,0.04)';  // Soft Smoke
+              default: return 'rgba(0,0,0,0.8)';               // Night Velvet
+            }
+          })(),
+          backdropFilter: (() => {
+            switch (general.backgroundStyle) {
+              case 'frosted': return 'blur(8px)';
+              case 'liquid': return 'blur(14px)';
+              case 'arctic': return 'blur(10px)';
+              case 'ember': return 'blur(8px)';
+              case 'smoke': return 'blur(6px)';
+              default: return 'none';
+            }
+          })(),
+          // Themed glow based on general setting
+          boxShadow: (() => {
+            if (general.glowMode === 'off') return 'none';
+            const base = isDragging || isResizing
+              ? `0 0 24px rgba(${accentRgb}, 0.35), 0 0 48px rgba(${accentRgb}, 0.2)`
+              : `0 0 16px rgba(${accentRgb}, 0.18)`;
+            if (general.glowMode === 'hover') return isFocused ? base : 'none';
+            return base; // 'on'
+          })(),
+          // Border only on mouse hover or hand-cursor focus
+          border: (isFocused ? `2px solid rgba(${accentRgb}, 0.7)` : '2px solid transparent'),
+        }}
       >
         {children}
       </div>

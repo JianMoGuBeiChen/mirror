@@ -53,6 +53,28 @@ A modular smart mirror interface built with React. Features draggable and resiza
    ```
 5. Open [http://localhost:3000](http://localhost:3000) to view the smart mirror
 
+## Spotify Setup
+
+This project includes an optional Spotify widget that shows your currently playing track.
+
+To enable it:
+
+1. Create a Spotify developer app
+   - Visit the Spotify Developer Dashboard: [developer.spotify.com](https://developer.spotify.com/)
+   - Create an app and note your Client ID and Client Secret.
+2. Add a Redirect URI
+   - In your app’s settings, add a redirect URI that matches your environment, e.g.:
+     - `http://localhost:3000/callback` (if running on port 3000)
+     - `http://localhost:8888/callback` (if running on port 8888)
+3. Configure in Settings
+   - Open the Smart Mirror → Settings → Spotify
+   - Paste Client ID and Client Secret
+   - Ensure Redirect URI matches the one registered in the Spotify Dashboard
+4. Sign in
+   - Click “Sign in with Spotify” and complete the login. You’ll be redirected back and the widget will start showing your current track.
+
+Scopes used: `user-read-currently-playing`, `user-read-playback-state` (see Spotify Web API docs at [developer.spotify.com](https://developer.spotify.com/)).
+
 ## Usage
 
 ### Main Mirror View

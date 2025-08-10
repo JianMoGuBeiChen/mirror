@@ -55,6 +55,20 @@ export const apps = [
     }
   },
   {
+    id: 'spotify',
+    name: 'Spotify',
+    description: 'Currently playing track',
+    componentPath: 'SpotifyApp',
+    enabled: false,
+    defaultPosition: { x: 750, y: 400 },
+    defaultSize: { width: 280, height: 260 },
+    settings: {
+      clientId: '',
+      clientSecret: '',
+      redirectUri: `${window.location.origin}/callback`
+    }
+  },
+  {
     id: 'handtracking',
     name: 'Hand Tracking',
     description: 'Camera-based hand tracking with cursor control',

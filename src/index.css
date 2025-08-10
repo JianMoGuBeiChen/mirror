@@ -4,17 +4,38 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #000000;
   color: white;
 }
+:root {
+  --accent: #10B981; /* default emerald */
+  --font-primary: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif;
+  --font-mono: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.font-primary { font-family: var(--font-primary); }
+.font-mono-override { font-family: var(--font-mono); }
+/* Ensure Tailwind's font-mono uses the theme-controlled mono font */
+.font-mono { font-family: var(--font-mono) !important; }
 
 * {
   box-sizing: border-box;
+}
+
+/* Accent variable and helpers */
+:root {
+  --accent: #10B981; /* default emerald */
+}
+
+.accent-text { color: var(--accent); }
+.accent-bg { background-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+.accent-ring { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
+.accent-border { border-color: var(--accent); }
+.accent-gradient {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 25%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
 }
 
 /* Custom scrollbar for dark theme */
@@ -53,5 +74,5 @@ body {
   width: 20px;
   height: 20px;
   cursor: se-resize;
-  background: linear-gradient(-45deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.3) 35%, rgba(255, 255, 255, 0.3) 65%, transparent 65%);
+  background: transparent;
 }
