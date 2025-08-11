@@ -1,0 +1,6 @@
+{
+  "smartMirrorTheme": "emerald",
+  "smartMirrorFont": "neon-grid",
+  "smartMirrorGeneral": "{\"glowMode\":\"on\",\"mirrorEnabled\":true,\"backgroundStyle\":\"black\"}",
+  "smartMirrorSettings": "{\"handtracking\":{\"enabled\":false},\"clock\":{\"enabled\":true}}"
+}

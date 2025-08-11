@@ -4,6 +4,7 @@ import { apps, saveAppSettings, toggleAppEnabled } from '../data/apps';
 import { buildSpotifyAuthUrl } from '../auth/SpotifyAuth';
 import { useTheme } from '../context/ThemeContext';
 import { getGeneralSettings, saveGeneralSettings } from '../data/general';
+import { globalSettings } from '../utils/globalSettings';
 
 const Settings = () => {
   const [settings, setSettings] = useState({});
@@ -12,8 +13,25 @@ const Settings = () => {
   const [general, setGeneral] = useState(getGeneralSettings());
 
   useEffect(() => {
-    const savedSettings = JSON.parse(localStorage.getItem('smartMirrorSettings') || '{}');
+    // Load settings from global settings
+    const savedSettings = JSON.parse(globalSettings.getSetting('smartMirrorSettings') || '{}');
     setSettings(savedSettings);
+    
+    // Listen for global settings updates
+    const handleSettingsUpdate = (allSettings) => {
+      const mirrorSettings = JSON.parse(allSettings.smartMirrorSettings || '{}');
+      setSettings(mirrorSettings);
+      
+      // Update general settings if they changed
+      const generalSettings = JSON.parse(allSettings.smartMirrorGeneral || '{}');
+      setGeneral(generalSettings);
+    };
+    
+    globalSettings.addListener(handleSettingsUpdate);
+    
+    return () => {
+      globalSettings.removeListener(handleSettingsUpdate);
+    };
   }, []);
 
   const updateGeneral = (partial) => {

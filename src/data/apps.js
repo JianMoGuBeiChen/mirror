@@ -87,13 +87,45 @@ export const apps = [
   }
 ];
 
+// Helper to get settings from either localStorage or global settings API
+const getSettings = () => {
+  // Try to import global settings, but fallback to localStorage if not available
+  try {
+    const { globalSettings } = require('../utils/globalSettings');
+    const settings = globalSettings.getSetting('smartMirrorSettings');
+    console.log('Getting app settings from global:', settings);
+    return JSON.parse(settings || '{}');
+  } catch (e) {
+    console.log('Fallback to localStorage for app settings');
+    return JSON.parse(localStorage.getItem('smartMirrorSettings') || '{}');
+  }
+};
+
+// Helper to save settings to both localStorage and global settings API
+const saveSettings = (settings) => {
+  const settingsJson = JSON.stringify(settings);
+  console.log('Saving app settings:', settingsJson);
+  
+  // Save to localStorage first for immediate access
+  localStorage.setItem('smartMirrorSettings', settingsJson);
+  
+  // Also save to global settings if available
+  try {
+    const { globalSettings } = require('../utils/globalSettings');
+    globalSettings.updateSetting('smartMirrorSettings', settingsJson);
+    console.log('Saved to global settings successfully');
+  } catch (e) {
+    console.log('Failed to save to global settings:', e);
+  }
+};
+
 export const getEnabledApps = () => {
-  const settings = JSON.parse(localStorage.getItem('smartMirrorSettings') || '{}');
+  const settings = getSettings();
   return apps.filter(app => settings[app.id]?.enabled !== false);
 };
 
 export const getAppSettings = (appId) => {
-  const settings = JSON.parse(localStorage.getItem('smartMirrorSettings') || '{}');
+  const settings = getSettings();
   const app = apps.find(a => a.id === appId);
   return {
     ...app?.settings,
@@ -102,19 +134,19 @@ export const getAppSettings = (appId) => {
 };
 
 export const saveAppSettings = (appId, newSettings) => {
-  const settings = JSON.parse(localStorage.getItem('smartMirrorSettings') || '{}');
+  const settings = getSettings();
   if (!settings[appId]) {
     settings[appId] = {};
   }
   settings[appId].settings = { ...settings[appId].settings, ...newSettings };
-  localStorage.setItem('smartMirrorSettings', JSON.stringify(settings));
+  saveSettings(settings);
 };
 
 export const toggleAppEnabled = (appId, enabled) => {
-  const settings = JSON.parse(localStorage.getItem('smartMirrorSettings') || '{}');
+  const settings = getSettings();
   if (!settings[appId]) {
     settings[appId] = {};
   }
   settings[appId].enabled = enabled;
-  localStorage.setItem('smartMirrorSettings', JSON.stringify(settings));
+  saveSettings(settings);
 };

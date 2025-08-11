@@ -61,12 +61,32 @@ const ThemeContext = createContext({
   setFontId: (_id) => {},
 });
 
+// Helper functions for global settings
+const getGlobalSetting = (key, defaultValue) => {
+  try {
+    const { globalSettings } = require('../utils/globalSettings');
+    return globalSettings.getSetting(key) || defaultValue;
+  } catch (e) {
+    return localStorage.getItem(key) || defaultValue;
+  }
+};
+
+const setGlobalSetting = (key, value) => {
+  localStorage.setItem(key, value);
+  try {
+    const { globalSettings } = require('../utils/globalSettings');
+    globalSettings.updateSetting(key, value);
+  } catch (e) {
+    // Fallback to localStorage only
+  }
+};
+
 export const ThemeProvider = ({ children }) => {
   const [themeId, setThemeId] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) || 'emerald';
+    return getGlobalSetting(STORAGE_KEY, 'emerald');
   });
   const [fontId, setFontId] = useState(() => {
-    return localStorage.getItem(FONT_STORAGE_KEY) || 'minimal-modern';
+    return getGlobalSetting(FONT_STORAGE_KEY, 'minimal-modern');
   });
 
   const theme = useMemo(() => THEMES.find(t => t.id === themeId) || THEMES[0], [themeId]);
@@ -74,31 +94,50 @@ export const ThemeProvider = ({ children }) => {
 
   // Persist and expose CSS variable for accent color
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, theme.id);
-    } catch (_) {}
+    setGlobalSetting(STORAGE_KEY, theme.id);
     document.documentElement.style.setProperty('--accent', theme.accent);
   }, [theme]);
 
   // Persist and expose CSS variables for fonts
   useEffect(() => {
-    try {
-      localStorage.setItem(FONT_STORAGE_KEY, fontPack.id);
-    } catch (_) {}
+    setGlobalSetting(FONT_STORAGE_KEY, fontPack.id);
     document.documentElement.style.setProperty('--font-primary', fontPack.primary);
     document.documentElement.style.setProperty('--font-mono', fontPack.mono);
   }, [fontPack]);
 
-  // Respond to storage changes from other tabs/windows
+  // Respond to storage changes from other tabs/windows AND global settings updates
   useEffect(() => {
     const handler = () => {
-      const stored = localStorage.getItem(STORAGE_KEY) || 'emerald';
+      const stored = getGlobalSetting(STORAGE_KEY, 'emerald');
       setThemeId(stored);
-      const storedFont = localStorage.getItem(FONT_STORAGE_KEY) || 'minimal-modern';
+      const storedFont = getGlobalSetting(FONT_STORAGE_KEY, 'minimal-modern');
       setFontId(storedFont);
     };
+    
     window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
+    
+    // Also listen for global settings updates
+    try {
+      const { globalSettings } = require('../utils/globalSettings');
+      globalSettings.addListener((allSettings) => {
+        const themeFromGlobal = allSettings[STORAGE_KEY] || 'emerald';
+        const fontFromGlobal = allSettings[FONT_STORAGE_KEY] || 'minimal-modern';
+        setThemeId(themeFromGlobal);
+        setFontId(fontFromGlobal);
+      });
+    } catch (e) {
+      // No global settings available, use localStorage only
+    }
+    
+    return () => {
+      window.removeEventListener('storage', handler);
+      try {
+        const { globalSettings } = require('../utils/globalSettings');
+        globalSettings.removeListener(handler);
+      } catch (e) {
+        // No cleanup needed
+      }
+    };
   }, []);
 
   const value = useMemo(() => ({ 
