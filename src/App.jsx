@@ -4,7 +4,7 @@ import SmartMirror from './pages/SmartMirror';
 import Settings from './pages/Settings';
 import SpotifyCallback from './pages/SpotifyCallback';
 import { ThemeProvider } from './context/ThemeContext';
-import './utils/globalSettings';
+// import './utils/globalSettings';
 
 function App() {
   return (

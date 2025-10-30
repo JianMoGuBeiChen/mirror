@@ -68,8 +68,8 @@ const CalendarApp = () => {
       <table className="flex-1 w-full mt-2 text-center">
         <thead>
           <tr className="text-white/70">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-              <th key={d} className="font-light" style={{ fontSize: `${sizes.daySize * 0.8}px` }}>{d}</th>
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, j) => (
+              <th key={`${d}-${j}`} className="font-light" style={{ fontSize: `${sizes.daySize * 0.8}px` }}>{d}</th>
             ))}
           </tr>
         </thead>

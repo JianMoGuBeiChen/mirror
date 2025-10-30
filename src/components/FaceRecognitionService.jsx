@@ -99,10 +99,15 @@ const FaceRecognitionService = ({ onFaceDetected, settings = {}, enabled }) => {
 
     // Start video stream
     const startVideo = async () => {
+      console.log('Attempting to start video stream...');
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+
+          videoRef.current.play().catch(e => {
+            console.error("Video play() failed:", e);
+          });
         }
       } catch (err) {
         console.error('Error starting video stream:', err);
@@ -123,6 +128,7 @@ const FaceRecognitionService = ({ onFaceDetected, settings = {}, enabled }) => {
   }, [isEnabled, modelsLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleVideoPlay = () => {
+    console.log('Video play event fired. Starting detection interval.');
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }

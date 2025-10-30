@@ -11,8 +11,8 @@ class GlobalSettingsAPI {
   }
 
   init() {
-    this.loadFromServer();
-    this.connect();
+    // this.loadFromServer();
+    // this.connect();
     
     // Sync with localStorage for compatibility
     this.syncWithLocalStorage();
