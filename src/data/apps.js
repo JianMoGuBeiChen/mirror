@@ -27,6 +27,17 @@ export const apps = [
     }
   },
   {
+    id: 'calendar',
+    name: 'Calendar',
+    description: 'Current month calendar',
+    componentPath: 'CalendarApp',
+    enabled: true,
+    isPersonal: false,
+    defaultPosition: { x: 750, y: 50 },
+    defaultSize: { width: 300, height: 280 },
+    settings: {}
+  },
+  {
     id: 'weather',
     name: 'Weather',
     description: 'Current weather conditions',
@@ -53,6 +64,17 @@ export const apps = [
       maxItems: 5,
       refreshInterval: 300000 // 5 minutes
     }
+  },
+  {
+    id: 'todo',
+    name: 'Todo List',
+    description: 'Personal todo list',
+    componentPath: 'TodoApp',
+    enabled: true,
+    isPersonal: true, // <-- Mark as personal
+    defaultPosition: { x: 400, y: 300 },
+    defaultSize: { width: 320, height: 250 },
+    settings: {}
   },
   {
     id: 'spotify',
@@ -83,6 +105,19 @@ export const apps = [
       sensitivity: 1.0,
       smoothing: 0.8,
       pinchSensitivity: 0.2 // Default 20% (0.0-1.0 range)
+    }
+  },
+  {
+    id: 'facerecognition',
+    name: 'Face Recognition',
+    description: 'Recognize users and personalize the mirror',
+    componentPath: 'FaceRecognitionApp',
+    enabled: false,
+    isPersonal: false, // <-- Add this
+    isBackgroundService: true,
+    settings: {
+      enabled: false,
+      showPreview: false,
     }
   }
 ];

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import DraggableApp from '../components/DraggableApp';
 import CursorOverlay from '../components/CursorOverlay';
 import HandTrackingService from '../components/HandTrackingService';
+import FaceRecognitionService from '../components/FaceRecognitionService';
 import { apps, getAppSettings } from '../data/apps';
 import { getGeneralSettings } from '../data/general';
 
@@ -12,12 +13,16 @@ import DateApp from '../apps/DateApp';
 import WeatherApp from '../apps/WeatherApp';
 import NewsApp from '../apps/NewsApp';
 import SpotifyApp from '../apps/SpotifyApp';
+import CalendarApp from '../apps/CalendarApp';
+import TodoApp from '../apps/TodoApp';
 
 const SmartMirror = () => {
-  const [enabledApps, setEnabledApps] = useState([]);
+  const [EnabledApps, setEnabledApps] = useState([]);
   const containerRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0, detected: false });
   const [handTrackingEnabled, setHandTrackingEnabled] = useState(false);
+  const [faceRecognitionEnabled, setFaceRecognitionEnabled] = useState(false);
+  const [detectedUser, setDetectedUser] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragTarget, setDragTarget] = useState(null);
   const dragTargetRef = useRef(null); // Immediate reference for drag logic
@@ -56,16 +61,20 @@ const SmartMirror = () => {
     
     // Check if hand tracking is enabled
     const handTrackingSettings = getAppSettings('handtracking');
-    
-    // TEMPORARY: Force enable hand tracking for debugging
-    const forceEnabled = true; // Set this to false when done debugging
-    setHandTrackingEnabled(forceEnabled || handTrackingSettings.enabled || false);
+    setHandTrackingEnabled(handTrackingSettings.enabled || false);
+
+    // Check if face recognition is enabled
+    const faceRecognitionSettings = getAppSettings('facerecognition');
+    setFaceRecognitionEnabled(faceRecognitionSettings.enabled || false);
     
     // Listen for settings changes
     const handleStorageChange = () => {
       setEnabledApps(getVisibleApps());
       const updatedHandTrackingSettings = getAppSettings('handtracking');
       setHandTrackingEnabled(updatedHandTrackingSettings.enabled || false);
+
+      const updatedFaceRecSettings = getAppSettings('facerecognition');
+      setFaceRecognitionEnabled(updatedFaceRecSettings.enabled || false);
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -214,13 +223,23 @@ const SmartMirror = () => {
     }
   };
 
+  const handleFaceDetected = (data) => {
+    if (data.detected) {
+      setDetectedUser(data.name);
+    } else {
+      setDetectedUser(null);
+    }
+  };
+
   // Component mapping
   const componentMap = {
     ClockApp,
     DateApp,
     WeatherApp,
     NewsApp,
-    SpotifyApp
+    SpotifyApp,
+    CalendarApp,
+    TodoApp,
   };
 
   const renderApp = (app) => {
@@ -244,10 +263,19 @@ const SmartMirror = () => {
         isExternallyDragged={isBeingDragged}
         isFocused={focusedAppId === app.id}
       >
-        <AppComponent appId={app.id} />
+      {/* --- Pass detectedUser to TodoApp --- */}
+        {app.id === 'todo' ? (
+          <AppComponent appId={app.id} detectedUser={detectedUser} />
+        ) : (
+          <AppComponent appId={app.id} />
+        )}
       </DraggableApp>
     );
   };
+
+  const publicApps = EnabledApps.filter(app => !app.isPersonal);
+  const personalApps = detectedUser ? EnabledApps.filter(app => app.isPersonal) : [];
+  const appsToRender = [...publicApps, ...personalApps];
 
   return (
     <div ref={containerRef} className={`w-screen h-screen bg-black overflow-hidden relative`}>
@@ -269,10 +297,30 @@ const SmartMirror = () => {
         enabled={handTrackingEnabled}
       />
       
+      {/* BACKGROUND FACE RECOGNITION SERVICE */}
+      <FaceRecognitionService
+        onFaceDetected={handleFaceDetected}
+        settings={getAppSettings('facerecognition')}
+        enabled={faceRecognitionEnabled}
+      />
 
+      {/* Welcome Message */}
+      {detectedUser && !isDragging && ( // Only show if not dragging
+        <div 
+          className="absolute top-1/3 left-4 z-50 p-4 rounded-lg"
+          style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
+        >
+          <div className="text-4xl font-light text-white/80">
+            Welcome,
+          </div>
+          <div className="text-6xl font-semibold text-white accent-text">
+            {detectedUser}
+          </div>
+        </div>
+      )}
 
       {/* Render enabled apps or black screen when mirror disabled */}
-      {mirrorEnabled ? enabledApps.map(renderApp) : null}
+      {mirrorEnabled ? appsToRender.map(renderApp) : null}
 
       {/* Hand tracking cursor overlay */}
       <CursorOverlay 
@@ -282,7 +330,7 @@ const SmartMirror = () => {
       />
 
       {/* Instructions overlay (only show if no apps are enabled) */}
-      {enabledApps.length === 0 && (
+      {appsToRender.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-white/70">
             <div className="text-6xl mb-4">🪟</div>

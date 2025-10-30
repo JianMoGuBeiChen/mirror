@@ -235,7 +235,22 @@ const Settings = () => {
             </div>
           </div>
         );
-
+      
+      case 'calendar':
+        return <div className="text-gray-400">No settings available for this app.</div>;
+      
+      case 'todo':
+        return (
+          <div>
+            <div className="text-gray-400">
+              No settings available for this app.
+            </div>
+            <p className="text-sm text-gray-500 mt-4">
+              Todo lists are automatically managed based on the recognised user.
+            </p>
+          </div>
+        );
+      
       case 'spotify':
         return (
           <div className="space-y-4">
@@ -407,6 +422,57 @@ const Settings = () => {
               <p className="text-sm text-gray-400 mt-1">
                 Lower values = easier to trigger pinch, higher values = need tighter pinch
               </p>
+            </div>
+          </div>
+        );
+      
+      case 'facerecognition':
+        return (
+          <div className="space-y-4">
+            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+              <div className="flex items-center space-x-2 text-yellow-400">
+                {/* SVG Warning Icon */}
+                <span className="font-medium">Camera Permission Required</span>
+              </div>
+              <p className="text-sm text-yellow-300 mt-2">
+                This app requires access to your camera for face recognition.
+              </p>
+            </div>
+            
+            <div>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={getAppSetting('facerecognition', 'enabled', false)}
+                  onChange={(e) => handleSettingChange('facerecognition', 'enabled', e.target.checked)}
+                  className="rounded"
+                />
+                <span>Enable Face Recognition</span>
+              </label>
+              <p className="text-sm text-gray-400 mt-1">
+                Log in by showing your face to the mirror.
+              </p>
+            </div>
+            
+            <div>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={getAppSetting('facerecognition', 'showPreview', false)}
+                  onChange={(e) => handleSettingChange('facerecognition', 'showPreview', e.target.checked)}
+                  className="rounded"
+                  disabled={!getAppSetting('facerecognition', 'enabled', false)}
+                />
+                <span>Show Camera Preview</span>
+              </label>
+            </div>
+            
+            <div className="text-sm text-gray-400 mt-4">
+              <p className="font-medium text-white">Profile Setup:</p>
+              To add your profile, place an image named 
+              <code className="font-mono bg-gray-700 px-1 py-0.5 rounded mx-1">profile.jpg</code>
+              inside the <code className="font-mono bg-gray-700 px-1 py-0.5 rounded mx-1">/public</code> folder 
+              and restart the app.
             </div>
           </div>
         );
